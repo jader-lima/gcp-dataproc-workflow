@@ -118,19 +118,19 @@ jobs:
 
     - name: Create Dataproc Managed Cluster
       run: >          
-        gcloud dataproc workflow-templates set-managed-cluster departments_etl \
-        --region ${{ env.REGION }} \
-        --zone ${{ env.ZONE }} \
-        --image-version ${{ env.DATAPROC_IMAGE_VERSION }} \
-        --master-machine-type=${{ env.DATAPROC_MASTER_TYPE }} \
-        --master-boot-disk-type ${{ env.DATAPROC_MASTER_BOOT_DISK_TYPE }} \
-        --master-boot-disk-size ${{ env.DATAPROC_MASTER_BOOT_DISK_SIZE }} \
-        --worker-machine-type=${{ env.DATAPROC_WORKER_TYPE }} \
+        gcloud dataproc workflow-templates set-managed-cluster departments_etl 
+        --region ${{ env.REGION }} 
+        --zone ${{ env.ZONE }} 
+        --image-version ${{ env.DATAPROC_IMAGE_VERSION }} 
+        --master-machine-type=${{ env.DATAPROC_MASTER_TYPE }} 
+        --master-boot-disk-type ${{ env.DATAPROC_MASTER_BOOT_DISK_TYPE }} 
+        --master-boot-disk-size ${{ env.DATAPROC_MASTER_BOOT_DISK_SIZE }} 
+        --worker-machine-type=${{ env.DATAPROC_WORKER_TYPE }} 
         --worker-boot-disk-type ${{ env.DATAPROC_WORKER_BOOT_DISK_TYPE }}
-        --worker-boot-disk-size ${{ env.DATAPROC_WORKER_DISK_SIZE }} \
-        --num-workers=${{ env.DATAPROC_NUM_WORKERS }} \
-        --cluster-name=${{ env.DATAPROC_CLUSTER_NAME }} \
-        --optional-components ${{ env.DATAPROC_COMPONENTS }} \
+        --worker-boot-disk-size ${{ env.DATAPROC_WORKER_DISK_SIZE }} 
+        --num-workers=${{ env.DATAPROC_NUM_WORKERS }} 
+        --cluster-name=${{ env.DATAPROC_CLUSTER_NAME }} 
+        --optional-components ${{ env.DATAPROC_COMPONENTS }} 
         --service-account=${{ env.GCP_SERVICE_ACCOUNT }}
 
     - name: Add Job Ingestion countries to Workflow
