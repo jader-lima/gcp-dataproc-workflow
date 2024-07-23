@@ -1,0 +1,150 @@
+name: Zip and Upload to GCP Bucket
+
+env:
+    BRONZE_DATALAKE_FILES: bronze
+    TRANSIENT_DATALAKE_FILES: transient
+    BUCKET_DATALAKE_FOLDER: transient
+    BUCKET_BIGDATA_JAR_FOLDER: jars
+    BUCKET_BIGDATA_PYSPARK_FOLDER: scripts
+    PYSPARK_INGESTION_SCRIPT : ingestion_csv_to_delta.py 
+    REGION: us-east1
+    ZONE: us-east1-b
+    DATAPROC_CLUSTER_NAME : dataproc-bigdata-multi-node-cluster
+    DATAPROC_WORKER_TYPE : n2-standard-2
+    DATAPROC_MASTER_TYPE : n2-standard-2
+    DATAPROC_NUM_WORKERS : 2
+    DATAPROC_IMAGE_VERSION : 2.1-debian11
+    DATAPROC_WORKER_NUM_LOCAL_SSD: 1
+    DATAPROC_MASTER_NUM_LOCAL_SSD: 1
+    DATAPROC_MASTER_BOOT_DISK_SIZE: 32   
+    DATAPROC_WORKER_DISK_SIZE: 32
+    DATAPROC_MASTER_BOOT_DISK_TYPE: pd-balanced
+    DATAPROC_WORKER_BOOT_DISK_TYPE: pd-balanced
+    DATAPROC_COMPONENTS: JUPYTER
+    DATAPROC_WORKFLOW_NAME: departments_etl
+    DATAPROC_WORKFLOW_INGESTION_STEP_NAME: ingestion_countries_csv_to_delta 
+    JAR_LIB1 : delta-core_2.12-2.3.0.jar
+    JAR_LIB2 : delta-storage-2.3.0.jar 
+    APP_NAME : 'countries_ingestion_csv_to_delta'
+    SUBJECT : departments
+    STEP1 : countries
+
+
+
+
+    GCP_SERVICE_ACCOUNT : 694772378109-compute@developer.gserviceaccount.com
+
+on:
+    push:
+        branchs: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Authorize GCP
+      uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json:  ${{ secrets.GCP_SA_KEY }}
+    
+    # Step to Authenticate with GCP
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        version: '>= 363.0.0'
+        project_id: ${{ secrets.PROJECT_ID }}
+
+    # Step to Configure Docker to use the gcloud command-line tool as a credential helper
+    - name: Configure Docker
+      run: |-
+        gcloud auth configure-docker
+
+
+    # Step to Create GCP Bucket 
+    - name: Create Google Cloud Storage - files
+      run: |-
+        gcloud storage buckets create gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }} --default-storage-class=nearline --location=${{ env.REGION }}
+
+
+    # Step to Create GCP Bucket 
+    - name: Create Google Cloud Storage - dataproc
+      run: |-
+        gcloud storage buckets create gs://${{ secrets.GCP_BUCKET_DATAPROC }} --default-storage-class=nearline --location=${{ env.REGION }}
+
+
+    # Step to Create GCP Bucket 
+    - name: Create Google Cloud Storage - datalake
+      run: |-
+        gcloud storage buckets create gs://${{ secrets.GCP_BUCKET_DATALAKE }} --default-storage-class=nearline --location=${{ env.REGION }}
+
+    # Step to Upload the file to GCP Bucket - transient files
+    - name: Upload transient files to Google Cloud Storage
+      run: |-
+        TARGET=${{ env.TRANSIENT_DATALAKE_FILES }}
+        BUCKET_PATH=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BUCKET_DATALAKE_FOLDER }}       
+        gsutil cp -r $TARGET gs://${BUCKET_PATH}
+
+
+    # Step to Upload the file to GCP Bucket - jar files
+    - name: Upload jar files to Google Cloud Storage
+      run: |-
+        TARGET=${{ env.BUCKET_BIGDATA_JAR_FOLDER }}
+        BUCKET_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}
+        gsutil cp -r $TARGET gs://${BUCKET_PATH}
+
+    # Step to Upload the file to GCP Bucket - pyspark files
+    - name: Upload pyspark files to Google Cloud Storage
+      run: |-
+        TARGET=${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}
+        BUCKET_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}
+        gsutil cp -r $TARGET gs://${BUCKET_PATH}
+
+    # Step to create dataproc cluster
+    - name: Upload pyspark files to Google Cloud Storage
+      run: |-
+        TARGET=${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}
+        BUCKET_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}
+        gsutil cp -r $TARGET gs://${BUCKET_PATH}
+
+    - name: Create Dataproc Workflow
+      run: >  
+        gcloud dataproc workflow-templates create ${{ env.DATAPROC_WORKFLOW_NAME }} 
+        --region ${{ env.REGION }}
+
+    - name: Create Dataproc Managed Cluster
+      run: >          
+        gcloud dataproc workflow-templates set-managed-cluster departments_etl \
+        --region ${{ env.REGION }} \
+        --zone ${{ env.ZONE }} \
+        --image-version ${{ env.DATAPROC_IMAGE_VERSION }} \
+        --master-machine-type=${{ env.DATAPROC_MASTER_TYPE }} \
+        --master-boot-disk-type ${{ env.DATAPROC_MASTER_BOOT_DISK_TYPE }} \
+        --master-boot-disk-size ${{ env.DATAPROC_MASTER_BOOT_DISK_SIZE }} \
+        --worker-machine-type=${{ env.DATAPROC_WORKER_TYPE }} \
+        --worker-boot-disk-type ${{ env.DATAPROC_WORKER_BOOT_DISK_TYPE }}
+        --worker-boot-disk-size ${{ env.DATAPROC_WORKER_DISK_SIZE }} \
+        --num-workers=${{ env.DATAPROC_NUM_WORKERS }} \
+        --cluster-name=${{ env.DATAPROC_CLUSTER_NAME }} \
+        --optional-components ${{ env.DATAPROC_COMPONENTS }} \
+        --service-account=${{ env.GCP_SERVICE_ACCOUNT }}
+
+    - name: Add Job Ingestion countries to Workflow
+      run: |-
+        PYSPARK_SCRIPT_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}/${{ env.PYSPARK_INGESTION_SCRIPT }}
+        JARS_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB1 }}
+        JARS_PATH=${JARS_PATH},${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB2 }}
+        TRANSIENT='${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BUCKET_DATALAKE_FOLDER }}/${{ env.SUBJECT }}/${{ env.STEP1 }}'
+        BRONZE='${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BRONZE_DATALAKE_FILES }}/${{ env.SUBJECT }}'
+        gcloud dataproc workflow-templates add-job pyspark gs://${PYSPARK_SCRIPT_PATH} \
+        --workflow-template ${{ env.DATAPROC_WORKFLOW_NAME }}  \
+        --step-id ${{ env.DATAPROC_WORKFLOW_INGESTION_STEP_NAME }} \
+        --region ${{ env.REGION }} \
+        --jars ${JARS_PATH} \
+        -- --app_name=${{ env.APP_NAME }} --bucket_transient=${{ env.TRANSIENT }} \
+        --bucket_bronze=${{ env.BRONZE }}
+
