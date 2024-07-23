@@ -145,6 +145,6 @@ jobs:
         --step-id ${{ env.DATAPROC_WORKFLOW_INGESTION_STEP_NAME }} \
         --region ${{ env.REGION }} \
         --jars ${JARS_PATH} \
-        -- --app_name=${{ env.APP_NAME }} --bucket_transient=gs://${{ env.TRANSIENT }} \
-        --bucket_bronze=gs://${{ env.BRONZE }}
+        -- --app_name=${{ env.APP_NAME }} --bucket_transient=gs://${{TRANSIENT }} \
+        --bucket_bronze=gs://${{BRONZE }}
 
