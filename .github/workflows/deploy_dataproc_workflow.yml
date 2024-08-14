@@ -31,9 +31,6 @@ env:
 
 
 
-
-    GCP_SERVICE_ACCOUNT : 694772378109-compute@developer.gserviceaccount.com
-
 on:
     push:
         branchs: [main]
@@ -131,7 +128,7 @@ jobs:
         --num-workers=${{ env.DATAPROC_NUM_WORKERS }} 
         --cluster-name=${{ env.DATAPROC_CLUSTER_NAME }} 
         --optional-components ${{ env.DATAPROC_COMPONENTS }} 
-        --service-account=${{ env.GCP_SERVICE_ACCOUNT }}
+        --service-account=${{ secrets.GCP_SERVICE_ACCOUNT }}
 
     - name: Add Job Ingestion countries to Workflow
       run: |-
