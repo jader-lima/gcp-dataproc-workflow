@@ -28,11 +28,16 @@ env:
     APP_NAME : 'countries_ingestion_csv_to_delta'
     SUBJECT : departments
     STEP1 : countries
+    STEP2 : departments
+    STEP3 : employees
+    TIME_ZONE : America/Sao_Paulo
+    SCHEDULE : "20 12 * * *"
+    SCHEDULE_NAME : schedule_departments_etl
+    SERVICE_ACCOUNT_NAME : dataproc-workflow-run
+    CUSTOM_ROLE : dataproc_workflow_role_run
+    SERVICE_ACCOUNT_DESCRIPTION : scheduler dataproc workflow service account
 
 
-
-
-    GCP_SERVICE_ACCOUNT : 694772378109-compute@developer.gserviceaccount.com
 
 on:
     push:
@@ -131,7 +136,7 @@ jobs:
         --num-workers=${{ env.DATAPROC_NUM_WORKERS }} 
         --cluster-name=${{ env.DATAPROC_CLUSTER_NAME }} 
         --optional-components ${{ env.DATAPROC_COMPONENTS }} 
-        --service-account=${{ env.GCP_SERVICE_ACCOUNT }}
+        --service-account=${{ secrets.GCP_SERVICE_ACCOUNT }}
 
     - name: Add Job Ingestion countries to Workflow
       run: |-
@@ -139,12 +144,72 @@ jobs:
         JARS_PATH=gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB1 }}
         JARS_PATH=${JARS_PATH},gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB2 }}
         TRANSIENT=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BUCKET_DATALAKE_FOLDER }}/${{ env.SUBJECT }}/${{ env.STEP1 }}
-        BRONZE=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BRONZE_DATALAKE_FILES }}/${{ env.SUBJECT }}
+        BRONZE=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BRONZE_DATALAKE_FILES }}/${{ env.SUBJECT }}/${{ env.STEP1 }}
         gcloud dataproc workflow-templates add-job pyspark gs://${PYSPARK_SCRIPT_PATH} \
         --workflow-template ${{ env.DATAPROC_WORKFLOW_NAME }}  \
-        --step-id ${{ env.DATAPROC_WORKFLOW_INGESTION_STEP_NAME }} \
+        --step-id ${{ env.STEP1 }} \
         --region ${{ env.REGION }} \
         --jars ${JARS_PATH} \
-        -- --app_name=${{ env.APP_NAME }} --bucket_transient=gs://${TRANSIENT} \
+        -- --app_name=${{ env.APP_NAME }}${{ env.STEP1 }} --bucket_transient=gs://${TRANSIENT} \
         --bucket_bronze=gs://${BRONZE}
 
+    - name: Add Job Ingestion departments to Workflow
+      run: |-
+        PYSPARK_SCRIPT_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}/${{ env.PYSPARK_INGESTION_SCRIPT }}
+        JARS_PATH=gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB1 }}
+        JARS_PATH=${JARS_PATH},gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB2 }}
+        TRANSIENT=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BUCKET_DATALAKE_FOLDER }}/${{ env.SUBJECT }}/${{ env.STEP2 }}
+        BRONZE=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BRONZE_DATALAKE_FILES }}/${{ env.SUBJECT }}/${{ env.STEP2 }}
+        gcloud dataproc workflow-templates add-job pyspark gs://${PYSPARK_SCRIPT_PATH} \
+        --workflow-template ${{ env.DATAPROC_WORKFLOW_NAME }}  \
+        --step-id ${{ env.STEP2 }} \
+        --start-after ${{ env.STEP1 }} \
+        --region ${{ env.REGION }} \
+        --jars ${JARS_PATH} \
+        -- --app_name=${{ env.APP_NAME }}${{ env.STEP2 }} --bucket_transient=gs://${TRANSIENT} \
+        --bucket_bronze=gs://${BRONZE}
+
+    - name: Add Job Ingestion employees to Workflow
+      run: |-
+        PYSPARK_SCRIPT_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}/${{ env.PYSPARK_INGESTION_SCRIPT }}
+        JARS_PATH=gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB1 }}
+        JARS_PATH=${JARS_PATH},gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB2 }}
+        TRANSIENT=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BUCKET_DATALAKE_FOLDER }}/${{ env.SUBJECT }}/${{ env.STEP3 }}
+        BRONZE=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BRONZE_DATALAKE_FILES }}/${{ env.SUBJECT }}/${{ env.STEP3 }}
+        gcloud dataproc workflow-templates add-job pyspark gs://${PYSPARK_SCRIPT_PATH} \
+        --workflow-template ${{ env.DATAPROC_WORKFLOW_NAME }}  \
+        --step-id ${{ env.STEP3 }} \
+        --start-after ${{ env.STEP1 }},${{ env.STEP2 }} \
+        --region ${{ env.REGION }} \
+        --jars ${JARS_PATH} \
+        -- --app_name=${{ env.APP_NAME }}${{ env.STEP3 }} --bucket_transient=gs://${TRANSIENT} \
+        --bucket_bronze=gs://${BRONZE}
+
+    - name: Create service account
+      run: |-
+        gcloud iam service-accounts create ${{ env.SERVICE_ACCOUNT_NAME }} \
+        --display-name=${{ env.SERVICE_ACCOUNT_DESCRIPTION }}
+
+    - name: Create Custom role for service account
+      run: |-
+        gcloud iam roles create ${{ env.CUSTOM_ROLE }} --project ${{ env.PROJECT_ID }} \
+        --title "Dataproc Workflow template scheduler" --description "Dataproc Workflow template scheduler" \
+        --permissions "dataproc.workflowTemplates.instantiate,iam.serviceAccounts.actAs" --stage ALPHA
+
+    - name: Add the custom role for service account
+      run: |-
+        gcloud projects add-iam-policy-binding ${{ env.PROJECT_ID }} \
+        --member=serviceAccount:${{ env.SERVICE_ACCOUNT_NAME }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
+        --role=projects/${{ env.PROJECT_ID }}/roles/${{ env.CUSTOM_ROLE }}
+
+    - name: Create cloud schedule for workflow execution
+      run: |-
+        gcloud scheduler jobs create http ${{ env.SCHEDULE_NAME }} \
+        --schedule="30 12 * * *" \
+        --description="Dataproc workflow " \
+        --location=${{ env.REGION }}\
+        --uri="https://dataproc.googleapis.com/v1/projects/${{ env.PROJECT_ID}}/regions/${{ env.REGION}}/workflowTemplates/${{ env.DATAPROC_WORKFLOW_NAME }}:instantiate?alt=json" \
+        --time-zone=${{ env.TIME_ZONE }} \
+        --oauth-service-account-email=${{ env.SERVICE_ACCOUNT_NAME }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com
+
+    
