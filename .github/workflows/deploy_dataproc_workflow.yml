@@ -74,6 +74,8 @@ jobs:
         if ! gsutil ls -p ${{ secrets.PROJECT_ID }} gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }} &> /dev/null; \
           then \
             gcloud storage buckets create gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }} --default-storage-class=nearline --location=${{ env.REGION }}
+          else
+            echo "Cloud Storage : gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }} is already exists" ! 
           fi
 
     # Step to Create GCP Bucket 
@@ -82,6 +84,8 @@ jobs:
         if ! gsutil ls -p ${{ secrets.PROJECT_ID }} gs://${{ secrets.GCP_BUCKET_DATAPROC }} &> /dev/null; \
           then \
             gcloud storage buckets create gs://${{ secrets.GCP_BUCKET_DATAPROC }} --default-storage-class=nearline --location=${{ env.REGION }}
+          else
+            echo "Cloud Storage : gs://${{ secrets.GCP_BUCKET_DATAPROC }} is already exists" ! 
           fi
 
     # Step to Create GCP Bucket 
@@ -156,6 +160,8 @@ jobs:
           then \
             gcloud dataproc workflow-templates create ${{ env.DATAPROC_WORKFLOW_NAME }} 
             --region ${{ env.REGION }}
+          else
+            echo "Workflow Template : ${{ secrets.DATAPROC_WORKFLOW_NAME }} is already exists" ! 
           fi
 
 
@@ -179,7 +185,9 @@ jobs:
             --cluster-name=${{ env.DATAPROC_CLUSTER_NAME }} 
             --optional-components ${{ env.DATAPROC_COMPONENTS }} 
             --service-account=${{ secrets.GCP_SERVICE_ACCOUNT }}
-          fi
+        else
+          echo "The Dataproc Managed Cluster : ${{ secrets.DATAPROC_WORKFLOW_NAME }} is already exists" ! 
+        fi
     - name: Add Job Ingestion countries to Workflow
       run: |-
         if ! gcloud dataproc workflow-templates describe ${{ env.DATAPROC_WORKFLOW_NAME}} --region=${{ env.REGION}} &> /dev/null; \
@@ -196,6 +204,8 @@ jobs:
             --jars ${JARS_PATH} \
             -- --app_name=${{ env.APP_NAME }}${{ env.STEP1 }} --bucket_transient=gs://${TRANSIENT} \
             --bucket_bronze=gs://${BRONZE}
+          else
+            echo "The step-id : ${{ env.STEP1 }} already exists for workflow-templates  ${{ secrets.DATAPROC_WORKFLOW_NAME }} " ! 
           fi
     - name: Add Job Ingestion departments to Workflow
       run: |-
@@ -214,6 +224,8 @@ jobs:
             --jars ${JARS_PATH} \
             -- --app_name=${{ env.APP_NAME }}${{ env.STEP2 }} --bucket_transient=gs://${TRANSIENT} \
             --bucket_bronze=gs://${BRONZE}
+          else
+            echo "The step-id : ${{ env.STEP2 }} already exists for workflow-templates  ${{ secrets.DATAPROC_WORKFLOW_NAME }} " ! 
           fi
     - name: Add Job Ingestion employees to Workflow
       run: |-
@@ -232,6 +244,8 @@ jobs:
             --jars ${JARS_PATH} \
             -- --app_name=${{ env.APP_NAME }}${{ env.STEP3 }} --bucket_transient=gs://${TRANSIENT} \
             --bucket_bronze=gs://${BRONZE}
+          else
+            echo "The step-id : ${{ env.STEP3 }} already exists for workflow-templates  ${{ secrets.DATAPROC_WORKFLOW_NAME }} " ! 
           fi
 
   deploy-cloud-schedule:
@@ -271,12 +285,12 @@ jobs:
           fi
     - name: Create Custom role for service account
       run: |-
-        if ! gcloud alpha iam roles describe ${{ env.CUSTOM_ROLE}} --project ${{ secrets.PROJECT_ID}} &> /dev/null; \
+        if ! gcloud alpha iam roles list --project ${{ secrets.PROJECT_ID }} | grep -i ${{ env.CUSTOM_ROLE }} &> /dev/null; \
           then \
             gcloud iam roles create ${{ env.CUSTOM_ROLE }} --project ${{ secrets.PROJECT_ID }} \
             --title "Dataproc Workflow template scheduler" --description "Dataproc Workflow template scheduler" \
             --permissions "dataproc.workflowTemplates.instantiate,iam.serviceAccounts.actAs" --stage ALPHA
-          fi       
+          fi    
 
     - name: Add the custom role for service account
       run: |-
