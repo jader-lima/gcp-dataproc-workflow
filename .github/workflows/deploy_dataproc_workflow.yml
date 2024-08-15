@@ -271,13 +271,12 @@ jobs:
           fi
     - name: Create Custom role for service account
       run: |-
-        if ! gcloud iam service-accounts list | grep -i ${{ env.CUSTOM_ROLE}} &> /dev/null; \
+        if ! gcloud alpha iam roles describe ${{ env.CUSTOM_ROLE}} --project ${{ secrets.PROJECT_ID}} &> /dev/null; \
           then \
             gcloud iam roles create ${{ env.CUSTOM_ROLE }} --project ${{ secrets.PROJECT_ID }} \
             --title "Dataproc Workflow template scheduler" --description "Dataproc Workflow template scheduler" \
             --permissions "dataproc.workflowTemplates.instantiate,iam.serviceAccounts.actAs" --stage ALPHA
           fi       
-
 
     - name: Add the custom role for service account
       run: |-
