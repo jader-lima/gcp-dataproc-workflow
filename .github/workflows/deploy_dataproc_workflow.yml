@@ -72,7 +72,7 @@ jobs:
 
     - name: Add the custom role for service account
       run: |-
-        gcloud projects add-iam-policy-binding ${{ env.PROJECT_ID }} \
+        gcloud projects add-iam-policy-binding ${{ secrets.PROJECT_ID }} \
         --member=serviceAccount:${{ env.SERVICE_ACCOUNT_NAME }}@${{ secrets.PROJECT_ID }}.iam.gserviceaccount.com \
         --role=projects/${{ secrets.PROJECT_ID }}/roles/${{ env.CUSTOM_ROLE }}
 
