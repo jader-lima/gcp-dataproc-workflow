@@ -72,15 +72,15 @@ jobs:
 
     - name: Create Custom role for service account
       run: |-
-        gcloud iam roles create ${{ env.CUSTOM_ROLE }} --project ${{ env.PROJECT_ID }} \
+        gcloud iam roles create ${{ env.CUSTOM_ROLE }} --project ${{ secrets.PROJECT_ID }} \
         --title "Dataproc Workflow template scheduler" --description "Dataproc Workflow template scheduler" \
         --permissions "dataproc.workflowTemplates.instantiate,iam.serviceAccounts.actAs" --stage ALPHA
 
     - name: Add the custom role for service account
       run: |-
         gcloud projects add-iam-policy-binding ${{ env.PROJECT_ID }} \
-        --member=serviceAccount:${{ env.SERVICE_ACCOUNT_NAME }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
-        --role=projects/${{ env.PROJECT_ID }}/roles/${{ env.CUSTOM_ROLE }}
+        --member=serviceAccount:${{ env.SERVICE_ACCOUNT_NAME }}@${{ secrets.PROJECT_ID }}.iam.gserviceaccount.com \
+        --role=projects/${{ secrets.PROJECT_ID }}/roles/${{ env.CUSTOM_ROLE }}
 
     - name: Create cloud schedule for workflow execution
       run: |-
@@ -88,8 +88,8 @@ jobs:
         --schedule="30 12 * * *" \
         --description="Dataproc workflow " \
         --location=${{ env.REGION }}\
-        --uri="https://dataproc.googleapis.com/v1/projects/${{ env.PROJECT_ID}}/regions/${{ env.REGION}}/workflowTemplates/${{ env.DATAPROC_WORKFLOW_NAME }}:instantiate?alt=json" \
+        --uri="https://dataproc.googleapis.com/v1/projects/${{ secrets.PROJECT_ID}}/regions/${{ env.REGION}}/workflowTemplates/${{ env.DATAPROC_WORKFLOW_NAME }}:instantiate?alt=json" \
         --time-zone=${{ env.TIME_ZONE }} \
-        --oauth-service-account-email=${{ env.SERVICE_ACCOUNT_NAME }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com
+        --oauth-service-account-email=${{ env.SERVICE_ACCOUNT_NAME }}@${{ secrets.PROJECT_ID }}.iam.gserviceaccount.com
 
     
