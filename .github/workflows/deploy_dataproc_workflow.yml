@@ -70,12 +70,6 @@ jobs:
         gcloud auth configure-docker
 
 
-    - name: Create Custom role for service account
-      run: |-
-        gcloud iam roles create ${{ env.CUSTOM_ROLE }} --project ${{ secrets.PROJECT_ID }} \
-        --title "Dataproc Workflow template scheduler" --description "Dataproc Workflow template scheduler" \
-        --permissions "dataproc.workflowTemplates.instantiate,iam.serviceAccounts.actAs" --stage ALPHA
-
     - name: Add the custom role for service account
       run: |-
         gcloud projects add-iam-policy-binding ${{ env.PROJECT_ID }} \
