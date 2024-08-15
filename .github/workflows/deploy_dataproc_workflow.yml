@@ -115,8 +115,9 @@ jobs:
         gsutil cp -r $TARGET gs://${BUCKET_PATH}
 
 
-jobs:
+
   deploy-dataproc-workflow-template:
+    needs: [deploy-buckets]
     runs-on: ubuntu-22.04
     timeout-minutes: 10
 
@@ -212,9 +213,8 @@ jobs:
         --bucket_bronze=gs://${BRONZE}
 
 
-
-jobs:
   deploy-cloud-schedule:
+    needs: [deploy-buckets, deploy-dataproc-workflow-template]
     runs-on: ubuntu-22.04
     timeout-minutes: 10
 
