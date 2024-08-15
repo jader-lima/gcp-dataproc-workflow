@@ -300,7 +300,7 @@ jobs:
 
     - name: Create cloud schedule for workflow execution
       run: |-
-        if ! gcloud dataproc workflow-templates describe ${{env.SCHEDULE_NAME}} --region ${{env.REGION}} &> /dev/null; \
+        if ! gcloud scheduler jobs describe ${{env.SCHEDULE_NAME}} --location ${{ env.REGION }} &> /dev/null; \
           then \
             gcloud scheduler jobs create http ${{env.SCHEDULE_NAME}} \
             --schedule="30 12 * * *" \
