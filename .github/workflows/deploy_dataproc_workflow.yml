@@ -42,7 +42,7 @@ on:
         branchs: [main]
 
 jobs:
-  deploy:
+  deploy-buckets:
     runs-on: ubuntu-22.04
     timeout-minutes: 10
 
@@ -114,6 +114,34 @@ jobs:
         BUCKET_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}
         gsutil cp -r $TARGET gs://${BUCKET_PATH}
 
+
+jobs:
+  deploy-dataproc-workflow-template:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Authorize GCP
+      uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json:  ${{ secrets.GCP_SA_KEY }}
+    
+    # Step to Authenticate with GCP
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        version: '>= 363.0.0'
+        project_id: ${{ secrets.PROJECT_ID }}
+
+    # Step to Configure Docker to use the gcloud command-line tool as a credential helper
+    - name: Configure Docker
+      run: |-
+        gcloud auth configure-docker
+
+
     - name: Create Dataproc Workflow
       run: >  
         gcloud dataproc workflow-templates create ${{ env.DATAPROC_WORKFLOW_NAME }} 
@@ -182,6 +210,35 @@ jobs:
         --jars ${JARS_PATH} \
         -- --app_name=${{ env.APP_NAME }}${{ env.STEP3 }} --bucket_transient=gs://${TRANSIENT} \
         --bucket_bronze=gs://${BRONZE}
+
+
+
+jobs:
+  deploy-cloud-schedule:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Authorize GCP
+      uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json:  ${{ secrets.GCP_SA_KEY }}
+    
+    # Step to Authenticate with GCP
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        version: '>= 363.0.0'
+        project_id: ${{ secrets.PROJECT_ID }}
+
+    # Step to Configure Docker to use the gcloud command-line tool as a credential helper
+    - name: Configure Docker
+      run: |-
+        gcloud auth configure-docker
+
 
     - name: Create service account
       run: |-
