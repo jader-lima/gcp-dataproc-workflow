@@ -71,25 +71,32 @@ jobs:
     # Step to Create GCP Bucket 
     - name: Create Google Cloud Storage - files
       run: |-
-        gcloud storage buckets create gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }} --default-storage-class=nearline --location=${{ env.REGION }}
-
+        if ! gsutil ls -p ${{ secrets.PROJECT_ID }} gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }} &> /dev/null; \
+          then \
+            gcloud storage buckets create gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }} --default-storage-class=nearline --location=${{ env.REGION }}
+          fi
 
     # Step to Create GCP Bucket 
     - name: Create Google Cloud Storage - dataproc
       run: |-
-        gcloud storage buckets create gs://${{ secrets.GCP_BUCKET_DATAPROC }} --default-storage-class=nearline --location=${{ env.REGION }}
-
+        if ! gsutil ls -p ${{ secrets.PROJECT_ID }} gs://${{ secrets.GCP_BUCKET_DATAPROC }} &> /dev/null; \
+          then \
+            gcloud storage buckets create gs://${{ secrets.GCP_BUCKET_DATAPROC }} --default-storage-class=nearline --location=${{ env.REGION }}
+          fi
 
     # Step to Create GCP Bucket 
     - name: Create Google Cloud Storage - datalake
       run: |-
-        gcloud storage buckets create gs://${{ secrets.GCP_BUCKET_DATALAKE }} --default-storage-class=nearline --location=${{ env.REGION }}
-
+        if ! gsutil ls -p ${{ secrets.PROJECT_ID }} gs://${{ secrets.GCP_BUCKET_DATALAKE }} &> /dev/null; \
+          then \
+            gcloud storage buckets create gs://${{ secrets.GCP_BUCKET_DATALAKE }} --default-storage-class=nearline --location=${{ env.REGION }}
+          fi
+          
     # Step to Upload the file to GCP Bucket - transient files
     - name: Upload transient files to Google Cloud Storage
       run: |-
         TARGET=${{ env.TRANSIENT_DATALAKE_FILES }}
-        BUCKET_PATH=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BUCKET_DATALAKE_FOLDER }}       
+        BUCKET_PATH=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BUCKET_DATALAKE_FOLDER }}    
         gsutil cp -r $TARGET gs://${BUCKET_PATH}
 
 
