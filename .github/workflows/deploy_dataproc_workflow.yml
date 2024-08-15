@@ -34,7 +34,7 @@ env:
     SCHEDULE : "20 12 * * *"
     SCHEDULE_NAME : schedule_departments_etl
     SERVICE_ACCOUNT_NAME : dataproc-account-workflow
-    CUSTOM_ROLE : role-workflow-custom
+    CUSTOM_ROLE : WorkflowCustomRole
 
 
 on:
