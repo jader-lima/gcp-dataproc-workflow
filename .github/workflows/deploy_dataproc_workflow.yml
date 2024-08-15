@@ -165,13 +165,11 @@ jobs:
           fi
 
 
-
-
     - name: Create Dataproc Managed Cluster
       run: >     
         if ! gcloud dataproc workflow-templates describe ${{ env.DATAPROC_WORKFLOW_NAME}} --region=${{ env.REGION}} &> /dev/null; \
           then \
-            gcloud dataproc workflow-templates set-managed-cluster departments_etl 
+            gcloud dataproc workflow-templates set-managed-cluster ${{ env.DATAPROC_WORKFLOW_NAME}}
             --region ${{ env.REGION }} 
             --zone ${{ env.ZONE }} 
             --image-version ${{ env.DATAPROC_IMAGE_VERSION }} 
