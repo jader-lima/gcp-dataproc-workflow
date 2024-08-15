@@ -152,7 +152,7 @@ jobs:
 
     - name: Create Dataproc Workflow
       run: >  
-        if ! gcloud dataproc workflow-templates describe ${{ env.DATAPROC_WORKFLOW_NAME}} --region=$${{ env.REGION}} &> /dev/null; \
+        if ! gcloud dataproc workflow-templates describe ${{ env.DATAPROC_WORKFLOW_NAME}} --region=${{ env.REGION}} &> /dev/null; \
           then \
             gcloud dataproc workflow-templates create ${{ env.DATAPROC_WORKFLOW_NAME }} 
             --region ${{ env.REGION }}
@@ -163,7 +163,7 @@ jobs:
 
     - name: Create Dataproc Managed Cluster
       run: >     
-        if ! gcloud dataproc workflow-templates describe ${{ env.DATAPROC_WORKFLOW_NAME}} --region=$${{ env.REGION}} &> /dev/null; \
+        if ! gcloud dataproc workflow-templates describe ${{ env.DATAPROC_WORKFLOW_NAME}} --region=${{ env.REGION}} &> /dev/null; \
           then \
             gcloud dataproc workflow-templates set-managed-cluster departments_etl 
             --region ${{ env.REGION }} 
@@ -182,7 +182,7 @@ jobs:
           fi
     - name: Add Job Ingestion countries to Workflow
       run: |-
-        if ! gcloud dataproc workflow-templates describe ${{ env.DATAPROC_WORKFLOW_NAME}} --region=$${{ env.REGION}} &> /dev/null; \
+        if ! gcloud dataproc workflow-templates describe ${{ env.DATAPROC_WORKFLOW_NAME}} --region=${{ env.REGION}} &> /dev/null; \
           then \
             PYSPARK_SCRIPT_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}/${{ env.PYSPARK_INGESTION_SCRIPT }}
             JARS_PATH=gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB1 }}
@@ -199,7 +199,7 @@ jobs:
           fi
     - name: Add Job Ingestion departments to Workflow
       run: |-
-        if ! gcloud dataproc workflow-templates describe ${{ env.DATAPROC_WORKFLOW_NAME}} --region=$${{ env.REGION}} &> /dev/null; \
+        if ! gcloud dataproc workflow-templates describe ${{ env.DATAPROC_WORKFLOW_NAME}} --region=${{ env.REGION}} &> /dev/null; \
           then \
             PYSPARK_SCRIPT_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}/${{ env.PYSPARK_INGESTION_SCRIPT }}
             JARS_PATH=gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB1 }}
@@ -217,7 +217,7 @@ jobs:
           fi
     - name: Add Job Ingestion employees to Workflow
       run: |-
-        if ! gcloud dataproc workflow-templates describe ${{ env.DATAPROC_WORKFLOW_NAME}} --region=$${{ env.REGION}} &> /dev/null; \
+        if ! gcloud dataproc workflow-templates describe ${{ env.DATAPROC_WORKFLOW_NAME}} --region=${{ env.REGION}} &> /dev/null; \
           then \
             PYSPARK_SCRIPT_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}/${{ env.PYSPARK_INGESTION_SCRIPT }}
             JARS_PATH=gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB1 }}
