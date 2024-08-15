@@ -68,7 +68,7 @@ jobs:
     - name: Configure Docker
       run: |-
         gcloud auth configure-docker
-        
+
 
     # Step to Create GCP Bucket 
     - name: Create Google Cloud Storage - files
@@ -198,10 +198,10 @@ jobs:
 
 
     - name: Add the custom role for service account
-        run: |-
-          gcloud projects add-iam-policy-binding ${secrets.PROJECT_ID} \
-          --member=serviceAccount:${env.SERVICE_ACCOUNT_NAME}@${secrets.PROJECT_ID}.iam.gserviceaccount.com \
-          --role=projects/${secrets.PROJECT_ID}/roles/${env.CUSTOM_ROLE}
+      run: |-
+        gcloud projects add-iam-policy-binding ${secrets.PROJECT_ID} \
+        --member=serviceAccount:${env.SERVICE_ACCOUNT_NAME}@${secrets.PROJECT_ID}.iam.gserviceaccount.com \
+        --role=projects/${secrets.PROJECT_ID}/roles/${env.CUSTOM_ROLE}
 
     - name: Create cloud schedule for workflow execution
       run: |-
