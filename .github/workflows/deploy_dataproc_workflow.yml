@@ -76,12 +76,12 @@ jobs:
 
     - name: Create cloud schedule for workflow execution
       run: |-
-        gcloud scheduler jobs create http ${env.SCHEDULE_NAME} \
+        gcloud scheduler jobs create http ${{env.SCHEDULE_NAME}} \
         --schedule="30 12 * * *" \
         --description="Dataproc workflow " \
-        --location=${env.REGION}\
-        --uri=https://dataproc.googleapis.com/v1/projects/${ secrets.PROJECT_ID}/regions/${ env.REGION}/workflowTemplates/${env.DATAPROC_WORKFLOW_NAME}:instantiate?alt=json \
-        --time-zone=${env.TIME_ZONE} \
-        --oauth-service-account-email=${env.SERVICE_ACCOUNT_NAME}@${secrets.PROJECT_ID}.iam.gserviceaccount.com
+        --location=${{env.REGION}}\
+        --uri=https://dataproc.googleapis.com/v1/projects/${{secrets.PROJECT_ID}}/regions/${{env.REGION}}/workflowTemplates/${{env.DATAPROC_WORKFLOW_NAME}}:instantiate?alt=json \
+        --time-zone=${{env.TIME_ZONE}} \
+        --oauth-service-account-email=${}env.SERVICE_ACCOUNT_NAME}}@${{secrets.PROJECT_ID}}.iam.gserviceaccount.com
 
     
