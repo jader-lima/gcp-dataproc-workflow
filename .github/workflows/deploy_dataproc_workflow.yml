@@ -35,7 +35,7 @@ env:
     SCHEDULE_NAME : schedule_departments_etl
     SERVICE_ACCOUNT_NAME : dataproc-workflow-run
     CUSTOM_ROLE : dataproc_workflow_role_run
-    SERVICE_ACCOUNT_DESCRIPTION : scheduler dataproc workflow service account
+
 
 
 
@@ -188,7 +188,7 @@ jobs:
     - name: Create service account
       run: |-
         gcloud iam service-accounts create ${{ env.SERVICE_ACCOUNT_NAME }} \
-        --display-name=${{ env.SERVICE_ACCOUNT_DESCRIPTION }}
+        --display-name="scheduler dataproc workflow service account"
 
     - name: Create Custom role for service account
       run: |-
