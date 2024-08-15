@@ -1,0 +1,220 @@
+name: Zip and Upload to GCP Bucket
+
+env:
+    BRONZE_DATALAKE_FILES: bronze
+    TRANSIENT_DATALAKE_FILES: transient
+    BUCKET_DATALAKE_FOLDER: transient
+    BUCKET_BIGDATA_JAR_FOLDER: jars
+    BUCKET_BIGDATA_PYSPARK_FOLDER: scripts
+    PYSPARK_INGESTION_SCRIPT : ingestion_csv_to_delta.py 
+    REGION: us-east1
+    ZONE: us-east1-b
+    DATAPROC_CLUSTER_NAME : dataproc-bigdata-multi-node-cluster
+    DATAPROC_WORKER_TYPE : n2-standard-2
+    DATAPROC_MASTER_TYPE : n2-standard-2
+    DATAPROC_NUM_WORKERS : 2
+    DATAPROC_IMAGE_VERSION : 2.1-debian11
+    DATAPROC_WORKER_NUM_LOCAL_SSD: 1
+    DATAPROC_MASTER_NUM_LOCAL_SSD: 1
+    DATAPROC_MASTER_BOOT_DISK_SIZE: 32   
+    DATAPROC_WORKER_DISK_SIZE: 32
+    DATAPROC_MASTER_BOOT_DISK_TYPE: pd-balanced
+    DATAPROC_WORKER_BOOT_DISK_TYPE: pd-balanced
+    DATAPROC_COMPONENTS: JUPYTER
+    DATAPROC_WORKFLOW_NAME: departments_etl
+    DATAPROC_WORKFLOW_INGESTION_STEP_NAME: ingestion_countries_csv_to_delta 
+    JAR_LIB1 : delta-core_2.12-2.3.0.jar
+    JAR_LIB2 : delta-storage-2.3.0.jar 
+    APP_NAME : 'countries_ingestion_csv_to_delta'
+    SUBJECT : departments
+    STEP1 : countries
+    STEP2 : departments
+    STEP3 : employees
+    TIME_ZONE : America/Sao_Paulo
+    SCHEDULE : "20 12 * * *"
+    SCHEDULE_NAME : schedule_departments_etl
+    SERVICE_ACCOUNT_NAME : dataproc-workflow-run
+    CUSTOM_ROLE : dataproc_workflow_custom_role
+
+
+
+
+on:
+    push:
+        branchs: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Authorize GCP
+      uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json:  ${{ secrets.GCP_SA_KEY }}
+    
+    # Step to Authenticate with GCP
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        version: '>= 363.0.0'
+        project_id: ${{ secrets.PROJECT_ID }}
+
+    # Step to Configure Docker to use the gcloud command-line tool as a credential helper
+    - name: Configure Docker
+      run: |-
+        gcloud auth configure-docker
+
+
+    # Step to Create GCP Bucket 
+    - name: Create Google Cloud Storage - files
+      run: |-
+        gcloud storage buckets create gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }} --default-storage-class=nearline --location=${{ env.REGION }}
+
+
+    # Step to Create GCP Bucket 
+    - name: Create Google Cloud Storage - dataproc
+      run: |-
+        gcloud storage buckets create gs://${{ secrets.GCP_BUCKET_DATAPROC }} --default-storage-class=nearline --location=${{ env.REGION }}
+
+
+    # Step to Create GCP Bucket 
+    - name: Create Google Cloud Storage - datalake
+      run: |-
+        gcloud storage buckets create gs://${{ secrets.GCP_BUCKET_DATALAKE }} --default-storage-class=nearline --location=${{ env.REGION }}
+
+    # Step to Upload the file to GCP Bucket - transient files
+    - name: Upload transient files to Google Cloud Storage
+      run: |-
+        TARGET=${{ env.TRANSIENT_DATALAKE_FILES }}
+        BUCKET_PATH=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BUCKET_DATALAKE_FOLDER }}       
+        gsutil cp -r $TARGET gs://${BUCKET_PATH}
+
+
+    # Step to Upload the file to GCP Bucket - jar files
+    - name: Upload jar files to Google Cloud Storage
+      run: |-
+        TARGET=${{ env.BUCKET_BIGDATA_JAR_FOLDER }}
+        BUCKET_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}
+        gsutil cp -r $TARGET gs://${BUCKET_PATH}
+
+    # Step to Upload the file to GCP Bucket - pyspark files
+    - name: Upload pyspark files to Google Cloud Storage
+      run: |-
+        TARGET=${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}
+        BUCKET_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}
+        gsutil cp -r $TARGET gs://${BUCKET_PATH}
+
+    # Step to create dataproc cluster
+    - name: Upload pyspark files to Google Cloud Storage
+      run: |-
+        TARGET=${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}
+        BUCKET_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}
+        gsutil cp -r $TARGET gs://${BUCKET_PATH}
+
+    - name: Create Dataproc Workflow
+      run: >  
+        gcloud dataproc workflow-templates create ${{ env.DATAPROC_WORKFLOW_NAME }} 
+        --region ${{ env.REGION }}
+
+    - name: Create Dataproc Managed Cluster
+      run: >          
+        gcloud dataproc workflow-templates set-managed-cluster departments_etl 
+        --region ${{ env.REGION }} 
+        --zone ${{ env.ZONE }} 
+        --image-version ${{ env.DATAPROC_IMAGE_VERSION }} 
+        --master-machine-type=${{ env.DATAPROC_MASTER_TYPE }} 
+        --master-boot-disk-type ${{ env.DATAPROC_MASTER_BOOT_DISK_TYPE }} 
+        --master-boot-disk-size ${{ env.DATAPROC_MASTER_BOOT_DISK_SIZE }} 
+        --worker-machine-type=${{ env.DATAPROC_WORKER_TYPE }} 
+        --worker-boot-disk-type ${{ env.DATAPROC_WORKER_BOOT_DISK_TYPE }}
+        --worker-boot-disk-size ${{ env.DATAPROC_WORKER_DISK_SIZE }} 
+        --num-workers=${{ env.DATAPROC_NUM_WORKERS }} 
+        --cluster-name=${{ env.DATAPROC_CLUSTER_NAME }} 
+        --optional-components ${{ env.DATAPROC_COMPONENTS }} 
+        --service-account=${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+    - name: Add Job Ingestion countries to Workflow
+      run: |-
+        PYSPARK_SCRIPT_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}/${{ env.PYSPARK_INGESTION_SCRIPT }}
+        JARS_PATH=gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB1 }}
+        JARS_PATH=${JARS_PATH},gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB2 }}
+        TRANSIENT=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BUCKET_DATALAKE_FOLDER }}/${{ env.SUBJECT }}/${{ env.STEP1 }}
+        BRONZE=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BRONZE_DATALAKE_FILES }}/${{ env.SUBJECT }}/${{ env.STEP1 }}
+        gcloud dataproc workflow-templates add-job pyspark gs://${PYSPARK_SCRIPT_PATH} \
+        --workflow-template ${{ env.DATAPROC_WORKFLOW_NAME }}  \
+        --step-id ${{ env.STEP1 }} \
+        --region ${{ env.REGION }} \
+        --jars ${JARS_PATH} \
+        -- --app_name=${{ env.APP_NAME }}${{ env.STEP1 }} --bucket_transient=gs://${TRANSIENT} \
+        --bucket_bronze=gs://${BRONZE}
+
+    - name: Add Job Ingestion departments to Workflow
+      run: |-
+        PYSPARK_SCRIPT_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}/${{ env.PYSPARK_INGESTION_SCRIPT }}
+        JARS_PATH=gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB1 }}
+        JARS_PATH=${JARS_PATH},gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB2 }}
+        TRANSIENT=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BUCKET_DATALAKE_FOLDER }}/${{ env.SUBJECT }}/${{ env.STEP2 }}
+        BRONZE=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BRONZE_DATALAKE_FILES }}/${{ env.SUBJECT }}/${{ env.STEP2 }}
+        gcloud dataproc workflow-templates add-job pyspark gs://${PYSPARK_SCRIPT_PATH} \
+        --workflow-template ${{ env.DATAPROC_WORKFLOW_NAME }}  \
+        --step-id ${{ env.STEP2 }} \
+        --start-after ${{ env.STEP1 }} \
+        --region ${{ env.REGION }} \
+        --jars ${JARS_PATH} \
+        -- --app_name=${{ env.APP_NAME }}${{ env.STEP2 }} --bucket_transient=gs://${TRANSIENT} \
+        --bucket_bronze=gs://${BRONZE}
+
+    - name: Add Job Ingestion employees to Workflow
+      run: |-
+        PYSPARK_SCRIPT_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}/${{ env.PYSPARK_INGESTION_SCRIPT }}
+        JARS_PATH=gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB1 }}
+        JARS_PATH=${JARS_PATH},gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB2 }}
+        TRANSIENT=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BUCKET_DATALAKE_FOLDER }}/${{ env.SUBJECT }}/${{ env.STEP3 }}
+        BRONZE=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BRONZE_DATALAKE_FILES }}/${{ env.SUBJECT }}/${{ env.STEP3 }}
+        gcloud dataproc workflow-templates add-job pyspark gs://${PYSPARK_SCRIPT_PATH} \
+        --workflow-template ${{ env.DATAPROC_WORKFLOW_NAME }}  \
+        --step-id ${{ env.STEP3 }} \
+        --start-after ${{ env.STEP1 }},${{ env.STEP2 }} \
+        --region ${{ env.REGION }} \
+        --jars ${JARS_PATH} \
+        -- --app_name=${{ env.APP_NAME }}${{ env.STEP3 }} --bucket_transient=gs://${TRANSIENT} \
+        --bucket_bronze=gs://${BRONZE}
+
+    - name: Create service account
+      run: |-
+        gcloud iam service-accounts create ${{ env.SERVICE_ACCOUNT_NAME }} \
+        --display-name="scheduler dataproc workflow service account"
+
+    - name: Create Custom role for service account
+      run: |-
+        gcloud iam roles create ${{ env.CUSTOM_ROLE }} --project ${{ env.PROJECT_ID }} \
+        --title "Dataproc Workflow template scheduler" --description "Dataproc Workflow template scheduler" \
+        --permissions "dataproc.workflowTemplates.instantiate,iam.serviceAccounts.actAs" --stage ALPHA
+
+        gcloud iam roles create $CUSTOM_ROLE --project $PROJECT_ID \
+      --title "Dataproc Workflow template scheduler" --description "Dataproc Workflow template scheduler" \
+      --permissions "dataproc.workflowTemplates.instantiate,iam.serviceAccounts.actAs" --stage ALPHA
+
+
+    - name: Add the custom role for service account
+      run: |-
+        gcloud projects add-iam-policy-binding ${{ env.PROJECT_ID }} \
+        --member=serviceAccount:${{ env.SERVICE_ACCOUNT_NAME }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
+        --role=projects/${{ env.PROJECT_ID }}/roles/${{ env.CUSTOM_ROLE }}
+
+    - name: Create cloud schedule for workflow execution
+      run: |-
+        gcloud scheduler jobs create http ${{ env.SCHEDULE_NAME }} \
+        --schedule="30 12 * * *" \
+        --description="Dataproc workflow " \
+        --location=${{ env.REGION }}\
+        --uri="https://dataproc.googleapis.com/v1/projects/${{ env.PROJECT_ID}}/regions/${{ env.REGION}}/workflowTemplates/${{ env.DATAPROC_WORKFLOW_NAME }}:instantiate?alt=json" \
+        --time-zone=${{ env.TIME_ZONE }} \
+        --oauth-service-account-email=${{ env.SERVICE_ACCOUNT_NAME }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com
+
+    
