@@ -169,7 +169,7 @@ jobs:
 
     - name: Create Dataproc Managed Cluster
       run: |-       
-        gcloud dataproc workflow-templates set-managed-cluster ${{ secrets.DATAPROC_WORKFLOW_NAME }} \
+        gcloud dataproc workflow-templates set-managed-cluster ${{ env.DATAPROC_WORKFLOW_NAME }} \
         --region ${{ env.REGION }} \
         --zone ${{ env.ZONE }} \
         --image-version ${{ env.DATAPROC_IMAGE_VERSION }} \
