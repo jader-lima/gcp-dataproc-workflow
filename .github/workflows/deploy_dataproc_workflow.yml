@@ -35,6 +35,9 @@ env:
     SCHEDULE_NAME : schedule_departments_etl
     SERVICE_ACCOUNT_NAME : dataproc-account-workflow
     CUSTOM_ROLE : WorkflowCustomRole
+    STEP1_NAME : step_${{ env.STEP1 }}
+    STEP2_NAME : step_${{ env.STEP2 }}
+    STEP3_NAME : step_${{ env.STEP3 }}
 
 
 on:
@@ -187,10 +190,10 @@ jobs:
       run: |-
         if gcloud dataproc workflow-templates list --region=${{ env.REGION}} | grep -i ${{ env.DATAPROC_WORKFLOW_NAME}} &> /dev/null; \
           then \
-            STEP1_NAME=step_${{ env.STEP1 }}
-            if gcloud dataproc workflow-templates describe ${{ env.DATAPROC_WORKFLOW_NAME}} --region=${{ env.REGION}} | grep -i ${{ STEP1_NAME }} &> /dev/null; \
+            
+            if gcloud dataproc workflow-templates describe ${{ env.DATAPROC_WORKFLOW_NAME}} --region=${{ env.REGION}} | grep -i ${{ env.STEP1_NAME  }} &> /dev/null; \
             then \
-              echo "Workflow Template : ${{ env.DATAPROC_WORKFLOW_NAME }} already has step : ${{ STEP1_NAME }} " ! 
+              echo "Workflow Template : ${{ env.DATAPROC_WORKFLOW_NAME }} already has step : ${{ env.STEP1_NAME  }} " ! 
             else
               PYSPARK_SCRIPT_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}/${{ env.PYSPARK_INGESTION_SCRIPT }}
               JARS_PATH=gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB1 }}
@@ -200,7 +203,7 @@ jobs:
 
               gcloud dataproc workflow-templates add-job pyspark gs://${PYSPARK_SCRIPT_PATH} \
               --workflow-template ${{ env.DATAPROC_WORKFLOW_NAME }}  \
-              --step-id ${{STEP1_NAME }} \
+              --step-id ${{env.STEP1_NAME }} \
               --region ${{ env.REGION }} \
               --jars ${JARS_PATH} \
               -- --app_name=${{ env.APP_NAME }}${{ env.STEP1 }} --bucket_transient=gs://${TRANSIENT} \
@@ -214,10 +217,9 @@ jobs:
       run: |-
         if gcloud dataproc workflow-templates list --region=${{ env.REGION}} | grep -i ${{ env.DATAPROC_WORKFLOW_NAME}} &> /dev/null; \
           then \
-            if gcloud dataproc workflow-templates describe ${{ env.DATAPROC_WORKFLOW_NAME}} --region=${{ env.REGION}} | grep -i ${{ STEP2_NAME }} &> /dev/null; \
+            if gcloud dataproc workflow-templates describe ${{ env.DATAPROC_WORKFLOW_NAME}} --region=${{ env.REGION}} | grep -i ${{ env.STEP2_NAME }} &> /dev/null; \
             then \
-            STEP2_NAME=step_${{ env.STEP2 }}
-              echo "Workflow Template : ${{ env.DATAPROC_WORKFLOW_NAME }} already has step : ${{ env.STEP2 }} " ! 
+              echo "Workflow Template : ${{ env.DATAPROC_WORKFLOW_NAME }} already has step : ${{ env.STEP2_NAME  }} " ! 
             else
               PYSPARK_SCRIPT_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}/${{ env.PYSPARK_INGESTION_SCRIPT }}
               JARS_PATH=gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB1 }}
@@ -227,8 +229,8 @@ jobs:
 
               gcloud dataproc workflow-templates add-job pyspark gs://${PYSPARK_SCRIPT_PATH} \
               --workflow-template ${{ env.DATAPROC_WORKFLOW_NAME }}  \
-              --step-id ${{ STEP2_NAME }} \
-              --start-after ${{ STEP1_NAME }} \
+              --step-id ${{ env.STEP2_NAME }} \
+              --start-after ${{ env.STEP1_NAME }} \
               --region ${{ env.REGION }} \
               --jars ${JARS_PATH} \
               -- --app_name=${{ env.APP_NAME }}${{ env.STEP2 }} --bucket_transient=gs://${TRANSIENT} \
@@ -243,10 +245,9 @@ jobs:
       run: |-
         if gcloud dataproc workflow-templates list --region=${{ env.REGION}} | grep -i ${{ env.DATAPROC_WORKFLOW_NAME}} &> /dev/null; \
           then \
-            STEP3_NAME=step_${{ env.STEP3 }}
-            if gcloud dataproc workflow-templates describe ${{ env.DATAPROC_WORKFLOW_NAME}} --region=${{ env.REGION}} | grep -i ${{ STEP3_NAME }} &> /dev/null; \
+            if gcloud dataproc workflow-templates describe ${{ env.DATAPROC_WORKFLOW_NAME}} --region=${{ env.REGION}} | grep -i ${{ env.STEP3_NAME }} &> /dev/null; \
             then \
-              echo "Workflow Template : ${{ env.DATAPROC_WORKFLOW_NAME }} already has step : ${{ STEP3_NAME }} " ! 
+              echo "Workflow Template : ${{ env.DATAPROC_WORKFLOW_NAME }} already has step : ${{ env.STEP3_NAME }} " ! 
             else
               PYSPARK_SCRIPT_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}/${{ env.PYSPARK_INGESTION_SCRIPT }}
               JARS_PATH=gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB1 }}
@@ -260,8 +261,8 @@ jobs:
 
               gcloud dataproc workflow-templates add-job pyspark gs://${PYSPARK_SCRIPT_PATH} \
               --workflow-template ${{ env.DATAPROC_WORKFLOW_NAME }}  \
-              --step-id ${{ STEP3_NAME }} \
-              --start-after ${{ STEP1_NAME }}, ${{ STEP2_NAME }} \
+              --step-id ${{ env.STEP3_NAME }} \
+              --start-after ${{ env.STEP1_NAME }}, ${{ env.STEP2_NAME }} \
               --region ${{ env.REGION }} \
               --jars ${JARS_PATH} \
               -- --app_name=${{ env.APP_NAME }}${{ env.STEP3 }} --bucket_transient=gs://${TRANSIENT} \
