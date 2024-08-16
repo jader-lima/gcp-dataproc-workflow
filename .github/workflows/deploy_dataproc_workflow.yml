@@ -30,6 +30,7 @@ env:
     STEP1 : countries
     STEP2 : departments
     STEP3 : employees
+    STEP4 : jobs
     TIME_ZONE : America/Sao_Paulo
     SCHEDULE : "20 12 * * *"
     SCHEDULE_NAME : schedule_departments_etl
@@ -38,6 +39,7 @@ env:
     STEP1_NAME : step_countries
     STEP2_NAME : step_departments
     STEP3_NAME : step_employees
+    STEP3_NAME : step_jobs
 
 
 on:
@@ -272,7 +274,36 @@ jobs:
           echo "Workflow Template : ${{ env.DATAPROC_WORKFLOW_NAME}} not exists" ! 
         fi
 
+    - name: Add Job Ingestion Jobs to Workflow
+      run: |-
+        if gcloud dataproc workflow-templates list --region=${{ env.REGION}} | grep -i ${{ env.DATAPROC_WORKFLOW_NAME}} &> /dev/null; \
+          then \
+            if gcloud dataproc workflow-templates describe ${{ env.DATAPROC_WORKFLOW_NAME}} --region=${{ env.REGION}} | grep -i ${{ env.STEP4_NAME }} &> /dev/null; \
+            then \
+              echo "Workflow Template : ${{ env.DATAPROC_WORKFLOW_NAME }} already has step : ${{ env.STEP4_NAME }} " ! 
+            else
+              PYSPARK_SCRIPT_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}/${{ env.PYSPARK_INGESTION_SCRIPT }}
+              JARS_PATH=gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB1 }}
+              JARS_PATH=${JARS_PATH},gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB2 }}
+              TRANSIENT=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BUCKET_DATALAKE_FOLDER }}/${{ env.SUBJECT }}/${{ env.STEP2 }}
+              PYSPARK_SCRIPT_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}/${{ env.PYSPARK_INGESTION_SCRIPT }}
+              JARS_PATH=gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB1 }}
+              JARS_PATH=${JARS_PATH},gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB2 }}
+              TRANSIENT=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BUCKET_DATALAKE_FOLDER }}/${{ env.SUBJECT }}/${{ env.STEP4 }}
+              BRONZE=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BRONZE_DATALAKE_FILES }}/${{ env.SUBJECT }}/${{ env.STEP4 }}
 
+              gcloud dataproc workflow-templates add-job pyspark gs://${PYSPARK_SCRIPT_PATH} \
+              --workflow-template ${{ env.DATAPROC_WORKFLOW_NAME }}  \
+              --step-id ${{ env.STEP4_NAME }} \
+              --start-after ${{ env.STEP1_NAME }},${{ env.STEP2_NAME }},${{ env.STEP3_NAME }} \
+              --region ${{ env.REGION }} \
+              --jars ${JARS_PATH} \
+              -- --app_name=${{ env.APP_NAME }}${{ env.STEP4 }} --bucket_transient=gs://${TRANSIENT} \
+              --bucket_bronze=gs://${BRONZE}
+            fi
+        else
+          echo "Workflow Template : ${{ env.DATAPROC_WORKFLOW_NAME}} not exists" ! 
+        fi
           
 
   deploy-cloud-schedule:
