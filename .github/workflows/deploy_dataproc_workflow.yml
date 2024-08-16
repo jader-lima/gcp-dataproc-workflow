@@ -35,9 +35,9 @@ env:
     SCHEDULE_NAME : schedule_departments_etl
     SERVICE_ACCOUNT_NAME : dataproc-account-workflow
     CUSTOM_ROLE : WorkflowCustomRole
-    STEP1_NAME : step_${{ env.STEP1 }}
-    STEP2_NAME : step_${{ env.STEP2 }}
-    STEP3_NAME : step_${{ env.STEP3 }}
+    STEP1_NAME : step_countries
+    STEP2_NAME : step_departments
+    STEP3_NAME : step_employees
 
 
 on:
