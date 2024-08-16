@@ -262,7 +262,7 @@ jobs:
               gcloud dataproc workflow-templates add-job pyspark gs://${PYSPARK_SCRIPT_PATH} \
               --workflow-template ${{ env.DATAPROC_WORKFLOW_NAME }}  \
               --step-id ${{ env.STEP3_NAME }} \
-              --start-after ${{ env.STEP1_NAME }}, ${{ env.STEP2_NAME }} \
+              --start-after ${{ env.STEP1_NAME }},${{ env.STEP2_NAME }} \
               --region ${{ env.REGION }} \
               --jars ${JARS_PATH} \
               -- --app_name=${{ env.APP_NAME }}${{ env.STEP3 }} --bucket_transient=gs://${TRANSIENT} \
