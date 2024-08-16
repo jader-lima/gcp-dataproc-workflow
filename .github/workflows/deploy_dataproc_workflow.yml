@@ -160,67 +160,76 @@ jobs:
           then \
             gcloud dataproc workflow-templates create ${{ env.DATAPROC_WORKFLOW_NAME }} --region ${{ env.REGION }}
 
-            gcloud dataproc workflow-templates set-managed-cluster ${{ env.DATAPROC_WORKFLOW_NAME}} \
-            --region ${{ env.REGION }} \
-            --zone ${{ env.ZONE }} \
-            --image-version ${{ env.DATAPROC_IMAGE_VERSION }} \ 
-            --master-machine-type=${{ env.DATAPROC_MASTER_TYPE }} \
-            --master-boot-disk-type ${{ env.DATAPROC_MASTER_BOOT_DISK_TYPE }} \ 
-            --master-boot-disk-size ${{ env.DATAPROC_MASTER_BOOT_DISK_SIZE }} \
-            --worker-machine-type=${{ env.DATAPROC_WORKER_TYPE }} \
-            --worker-boot-disk-type ${{ env.DATAPROC_WORKER_BOOT_DISK_TYPE }} \
-            --worker-boot-disk-size ${{ env.DATAPROC_WORKER_DISK_SIZE }} \
-            --num-workers=${{ env.DATAPROC_NUM_WORKERS }} \
-            --cluster-name=${{ env.DATAPROC_CLUSTER_NAME }} \
-            --optional-components ${{ env.DATAPROC_COMPONENTS }} \ 
-            --service-account=${{ secrets.GCP_SERVICE_ACCOUNT }}
+          else
+            echo "Workflow Template : ${{ secrets.DATAPROC_WORKFLOW_NAME }} is already exists" ! 
+          fi
 
-            PYSPARK_SCRIPT_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}/${{ env.PYSPARK_INGESTION_SCRIPT }}
-            JARS_PATH=gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB1 }}
-            JARS_PATH=${JARS_PATH},gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB2 }}
-            TRANSIENT=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BUCKET_DATALAKE_FOLDER }}/${{ env.SUBJECT }}/${{ env.STEP1 }}
-            BRONZE=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BRONZE_DATALAKE_FILES }}/${{ env.SUBJECT }}/${{ env.STEP1 }}
 
-            gcloud dataproc workflow-templates add-job pyspark gs://${PYSPARK_SCRIPT_PATH} \
-            --workflow-template ${{ env.DATAPROC_WORKFLOW_NAME }}  \
-            --step-id ${{ env.STEP1 }} \
-            --region ${{ env.REGION }} \
-            --jars ${JARS_PATH} \
-            -- --app_name=${{ env.APP_NAME }}${{ env.STEP1 }} --bucket_transient=gs://${TRANSIENT} \
-            --bucket_bronze=gs://${BRONZE}
+    - name: Create Dataproc Managed Cluster
+      run: |-       
+        gcloud dataproc workflow-templates set-managed-cluster departments_etl 
+        --region ${{ env.REGION }} 
+        --zone ${{ env.ZONE }} 
+        --image-version ${{ env.DATAPROC_IMAGE_VERSION }} 
+        --master-machine-type=${{ env.DATAPROC_MASTER_TYPE }} 
+        --master-boot-disk-type ${{ env.DATAPROC_MASTER_BOOT_DISK_TYPE }} 
+        --master-boot-disk-size ${{ env.DATAPROC_MASTER_BOOT_DISK_SIZE }} 
+        --worker-machine-type=${{ env.DATAPROC_WORKER_TYPE }} 
+        --worker-boot-disk-type ${{ env.DATAPROC_WORKER_BOOT_DISK_TYPE }}
+        --worker-boot-disk-size ${{ env.DATAPROC_WORKER_DISK_SIZE }} 
+        --num-workers=${{ env.DATAPROC_NUM_WORKERS }} 
+        --cluster-name=${{ env.DATAPROC_CLUSTER_NAME }} 
+        --optional-components ${{ env.DATAPROC_COMPONENTS }} 
+        --service-account=${{ secrets.GCP_SERVICE_ACCOUNT }}
 
-            PYSPARK_SCRIPT_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}/${{ env.PYSPARK_INGESTION_SCRIPT }}
-            JARS_PATH=gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB1 }}
-            JARS_PATH=${JARS_PATH},gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB2 }}
-            TRANSIENT=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BUCKET_DATALAKE_FOLDER }}/${{ env.SUBJECT }}/${{ env.STEP2 }}
-            BRONZE=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BRONZE_DATALAKE_FILES }}/${{ env.SUBJECT }}/${{ env.STEP2 }}
+    - name: Add Job Ingestion countries to Workflow
+      run: |-
+        PYSPARK_SCRIPT_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}/${{ env.PYSPARK_INGESTION_SCRIPT }}
+        JARS_PATH=gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB1 }}
+        JARS_PATH=${JARS_PATH},gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB2 }}
+        TRANSIENT=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BUCKET_DATALAKE_FOLDER }}/${{ env.SUBJECT }}/${{ env.STEP1 }}
+        BRONZE=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BRONZE_DATALAKE_FILES }}/${{ env.SUBJECT }}/${{ env.STEP1 }}
+        gcloud dataproc workflow-templates add-job pyspark gs://${PYSPARK_SCRIPT_PATH} \
+        --workflow-template ${{ env.DATAPROC_WORKFLOW_NAME }}  \
+        --step-id ${{ env.STEP1 }} \
+        --region ${{ env.REGION }} \
+        --jars ${JARS_PATH} \
+        -- --app_name=${{ env.APP_NAME }}${{ env.STEP1 }} --bucket_transient=gs://${TRANSIENT} \
+        --bucket_bronze=gs://${BRONZE}
 
-            gcloud dataproc workflow-templates add-job pyspark gs://${PYSPARK_SCRIPT_PATH} \
-            --workflow-template ${{ env.DATAPROC_WORKFLOW_NAME }}  \
-            --step-id ${{ env.STEP2 }} \
-            --start-after ${{ env.STEP1 }} \
-            --region ${{ env.REGION }} \
-            --jars ${JARS_PATH} \
-            -- --app_name=${{ env.APP_NAME }}${{ env.STEP2 }} --bucket_transient=gs://${TRANSIENT} \
-            --bucket_bronze=gs://${BRONZE}
 
-            PYSPARK_SCRIPT_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}/${{ env.PYSPARK_INGESTION_SCRIPT }}
-            JARS_PATH=gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB1 }}
-            JARS_PATH=${JARS_PATH},gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB2 }}
-            TRANSIENT=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BUCKET_DATALAKE_FOLDER }}/${{ env.SUBJECT }}/${{ env.STEP3 }}
-            BRONZE=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BRONZE_DATALAKE_FILES }}/${{ env.SUBJECT }}/${{ env.STEP3 }}
-            gcloud dataproc workflow-templates add-job pyspark gs://${PYSPARK_SCRIPT_PATH} \
-            --workflow-template ${{ env.DATAPROC_WORKFLOW_NAME }}  \
-            --step-id ${{ env.STEP3 }} \
-            --start-after ${{ env.STEP1 }},${{ env.STEP2 }} \
-            --region ${{ env.REGION }} \
-            --jars ${JARS_PATH} \
-            -- --app_name=${{ env.APP_NAME }}${{ env.STEP3 }} --bucket_transient=gs://${TRANSIENT} \
-            --bucket_bronze=gs://${BRONZE}
-        else
-          echo "Workflow Template : ${{ secrets.DATAPROC_WORKFLOW_NAME }} is already exists" ! 
-        fi
+    - name: Add Job Ingestion departments to Workflow
+      run: |-
+        PYSPARK_SCRIPT_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}/${{ env.PYSPARK_INGESTION_SCRIPT }}
+        JARS_PATH=gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB1 }}
+        JARS_PATH=${JARS_PATH},gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB2 }}
+        TRANSIENT=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BUCKET_DATALAKE_FOLDER }}/${{ env.SUBJECT }}/${{ env.STEP2 }}
+        BRONZE=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BRONZE_DATALAKE_FILES }}/${{ env.SUBJECT }}/${{ env.STEP2 }}
+        gcloud dataproc workflow-templates add-job pyspark gs://${PYSPARK_SCRIPT_PATH} \
+        --workflow-template ${{ env.DATAPROC_WORKFLOW_NAME }}  \
+        --step-id ${{ env.STEP2 }} \
+        --start-after ${{ env.STEP1 }} \
+        --region ${{ env.REGION }} \
+        --jars ${JARS_PATH} \
+        -- --app_name=${{ env.APP_NAME }}${{ env.STEP2 }} --bucket_transient=gs://${TRANSIENT} \
+        --bucket_bronze=gs://${BRONZE}
 
+    - name: Add Job Ingestion employees to Workflow
+      run: |-
+        PYSPARK_SCRIPT_PATH=${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_PYSPARK_FOLDER }}/${{ env.PYSPARK_INGESTION_SCRIPT }}
+        JARS_PATH=gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB1 }}
+        JARS_PATH=${JARS_PATH},gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}/${{ env.BUCKET_BIGDATA_JAR_FOLDER }}/${{ env.JAR_LIB2 }}
+        TRANSIENT=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BUCKET_DATALAKE_FOLDER }}/${{ env.SUBJECT }}/${{ env.STEP3 }}
+        BRONZE=${{ secrets.GCP_BUCKET_DATALAKE }}/${{ env.BRONZE_DATALAKE_FILES }}/${{ env.SUBJECT }}/${{ env.STEP3 }}
+        gcloud dataproc workflow-templates add-job pyspark gs://${PYSPARK_SCRIPT_PATH} \
+        --workflow-template ${{ env.DATAPROC_WORKFLOW_NAME }}  \
+        --step-id ${{ env.STEP3 }} \
+        --start-after ${{ env.STEP1 }},${{ env.STEP2 }} \
+        --region ${{ env.REGION }} \
+        --jars ${JARS_PATH} \
+        -- --app_name=${{ env.APP_NAME }}${{ env.STEP3 }} --bucket_transient=gs://${TRANSIENT} \
+        --bucket_bronze=gs://${BRONZE}
+          
 
   deploy-cloud-schedule:
     needs: [deploy-buckets, deploy-dataproc-workflow-template]
