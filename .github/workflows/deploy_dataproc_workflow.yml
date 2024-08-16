@@ -75,7 +75,7 @@ jobs:
           then \
             gcloud storage buckets create gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }} --default-storage-class=nearline --location=${{ env.REGION }}
           else
-            echo "Cloud Storage : gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }} is already exists" ! 
+            echo "Cloud Storage : gs://${{ secrets.GCP_BUCKET_BIGDATA_FILES }}  already exists" ! 
           fi
 
     # Step to Create GCP Bucket 
@@ -85,7 +85,7 @@ jobs:
           then \
             gcloud storage buckets create gs://${{ secrets.GCP_BUCKET_DATAPROC }} --default-storage-class=nearline --location=${{ env.REGION }}
           else
-            echo "Cloud Storage : gs://${{ secrets.GCP_BUCKET_DATAPROC }} is already exists" ! 
+            echo "Cloud Storage : gs://${{ secrets.GCP_BUCKET_DATAPROC }}  already exists" ! 
           fi
 
     # Step to Create GCP Bucket 
@@ -94,6 +94,8 @@ jobs:
         if ! gsutil ls -p ${{ secrets.PROJECT_ID }} gs://${{ secrets.GCP_BUCKET_DATALAKE }} &> /dev/null; \
           then \
             gcloud storage buckets create gs://${{ secrets.GCP_BUCKET_DATALAKE }} --default-storage-class=nearline --location=${{ env.REGION }}
+          else
+            echo "Cloud Storage : gs://${{ secrets.GCP_BUCKET_DATALAKE }}  already exists" ! 
           fi
 
     # Step to Upload the file to GCP Bucket - transient files
@@ -161,13 +163,13 @@ jobs:
             gcloud dataproc workflow-templates create ${{ env.DATAPROC_WORKFLOW_NAME }} --region ${{ env.REGION }}
 
           else
-            echo "Workflow Template : ${{ secrets.DATAPROC_WORKFLOW_NAME }} is already exists" ! 
+            echo "Workflow Template : ${{ secrets.DATAPROC_WORKFLOW_NAME }} already exists" ! 
           fi
 
 
     - name: Create Dataproc Managed Cluster
       run: |-       
-        gcloud dataproc workflow-templates set-managed-cluster departments_etl 
+        gcloud dataproc workflow-templates set-managed-cluster ${{ secrets.DATAPROC_WORKFLOW_NAME }} 
         --region ${{ env.REGION }} 
         --zone ${{ env.ZONE }} 
         --image-version ${{ env.DATAPROC_IMAGE_VERSION }} 
