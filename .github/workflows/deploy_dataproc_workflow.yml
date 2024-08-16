@@ -39,7 +39,7 @@ env:
     STEP1_NAME : step_countries
     STEP2_NAME : step_departments
     STEP3_NAME : step_employees
-    STEP3_NAME : step_jobs
+    STEP4_NAME : step_jobs
 
 
 on:
