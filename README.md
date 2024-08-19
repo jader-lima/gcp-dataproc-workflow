@@ -488,6 +488,9 @@ It is possible to include the status details of the last run, the schedule, whic
 alla
 ![cloud storage files](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/wpm81m10u0gjt401dftw.jpeg)
 
-###Conclusion
+### Conclusion
 Data pipelines are essential elements in the world of data processing, although there are specialized and feature-rich tools such as Azure Data Factory and Apache Airflow, there are simpler options that are often interesting in certain scenarios, leaving it up to the data and architecture team to define the tool.
 most appropriate for the moment.
+
+### Links and References
+[Dataproc workflow documentation](https://cloud.google.com/dataproc/docs/concepts/workflows/workflow-schedule-solutions)
