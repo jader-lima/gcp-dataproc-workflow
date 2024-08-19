@@ -2,27 +2,88 @@
 
 ## Description of Services Used in GCP
 
-### Apache Spark
+## Apache Spark
 Apache Spark is an open-source unified analytics engine for large-scale data processing. It is known for its speed, ease of use, and sophisticated analytics capabilities. Spark provides an interface for programming entire clusters with implicit data parallelism and fault tolerance, making it suitable for a wide variety of big data applications.
 
-### Google Dataproc
+## Google Dataproc
 Google Dataproc is a fully managed cloud service that simplifies running Apache Spark and Apache Hadoop clusters in the Google Cloud environment. It allows users to easily process large datasets and integrates seamlessly with other Google Cloud services such as Cloud Storage. Dataproc is designed to make big data processing fast and efficient while minimizing operational overhead.
 
-### Cloud Storage
+## Cloud Storage
 Google Cloud Storage is a scalable and secure object storage service for storing large amounts of unstructured data. It offers high availability and strong global consistency, making it suitable for a wide range of scenarios, such as data backups, big data analytics, and content distribution.
 
-### Workflow Templates
+## Workflow Templates
 Workflow templates in Google Cloud allow you to define and manage complex workflows that automate interactions between different cloud services. This feature simplifies the process of building, scheduling, and executing intricate workflows, ensuring better management of resources and tasks.
 
-### Cloud Scheduler
+## Cloud Scheduler
 Google Cloud Scheduler is a fully managed cron job service that allows you to run arbitrary functions at specified times without needing to manage the infrastructure. It is useful for automating tasks such as running reports, triggering workflows, and executing other scheduled jobs.
 
 ## CI/CD Process with GitHub Actions
 Incorporating a CI/CD pipeline using GitHub Actions involves automating the build, test, and deployment processes of your applications. For this project, GitHub Actions simplifies the deployment of code and resources to Google Cloud. This automation leverages GitHub's infrastructure to trigger workflows based on events such as code pushes, ensuring that your applications are built and deployed consistently and accurately each time code changes are made.
 
-### GitHub Secrets
+## GitHub Secrets and Configuration
 Utilizing secrets in GitHub Actions is vital for maintaining security during the deployment process. Secrets allow you to store sensitive information such as API keys, passwords, and service account credentials securely. By keeping this sensitive data out of your source code, you minimize the risk of leaks and unauthorized access.
 
+
+1. GCP_BUCKET_BIGDATA_FILES
+    1. Secret used to store the name of the cloud storage
+   
+2. GCP_BUCKET_DATALAKE
+    1. Secret used to store the name of the cloud storage
+
+3. GCP_BUCKET_DATAPROC
+    1. Secret used to store the name of the cloud storage
+
+5. GCP_SERVICE_ACCOUNT
+
+4. GCP_SA_KEY
+    1. Secret used to store the value of the service account key. For this project, the default service key was used. 
+
+6. PROJECT_ID
+    1. Secret used to store the project id value
+
+###Creating a GCP service account key
+
+To create computing resources in any cloud, in an automated or programmatic way, it is necessary to have an access key.
+In the case of GCP, we use an access key linked to a service account, for the project the default account was used.
+
+1. In GCP Console, access :
+   1. IAM &Admin
+   2. Service accounts
+   3. Select default service account, default name is something like **Compute Engine default service account**
+   4. In selected service account, menu **KEYS**, 
+       1. **ADD KEY**, **Create new Key**, Key Type **json**
+       2. Download the key file, use the content as key value in your secret in github
+
+![GCP service account key](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/ua188978d64xi4o6php2.png)
+
+For more details, access:
+https://cloud.google.com/iam/docs/keys-create-delete
+
+### Creating github secret
+
+1. To create a new secret:
+    1. In project repository, menu **Settings** 
+    2. **Security**, 
+    3. **Secrets and variables**,click in access **Action**
+    4. **New repository secret**, type a **name** and **value** for secret.
+
+![github secret creation](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/i45cicz0q89ije7j70yf.png)
+
+For more details , access :
+https://docs.github.com/pt/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions
+
+##Deploying the project
+Every time a push to the **main** branch happens, github actions will be triggered,
+running the yml script.
+the yml script contains 3 jobs which are explained in more detail below, but basically
+github actions uses the credentials of the service account with rights to create 
+computing resources, if you authenticate to GCP, perform the steps described in the yml file
+
+```yml
+on:
+    push:
+        branchs: [main]
+```
 
 
 ## Workflow File YAML Explanation
@@ -71,6 +132,7 @@ env:
     STEP2_NAME : step_departments
     STEP3_NAME : step_employees
     STEP4_NAME : step_jobs
+```
 
 ### **Deploy Buckets Job**
 This job is responsible for creating three Google Cloud Storage buckets: one for transient files, one for jar files, and one for PySpark scripts. It checks if each bucket already exists before attempting to create them. Additionally, it uploads specified files into these buckets to prepare for later processing.
@@ -393,3 +455,39 @@ This job sets up a scheduling mechanism using Google Cloud Scheduler. It creates
 
 ### **Explanation**
 In this job, a service account is created specifically for handling the scheduled workflow execution. It also defines a custom role that grants the necessary permissions for the service account to instantiate the workflow template. This custom role is then associated with the service account to ensure it has the required permissions. Finally, the job creates a cloud schedule that triggers the workflow execution at predetermined times, ensuring automated execution of the data processing workflow.
+
+## **Resources created after deploy process**
+
+### **Dataproc Workflow Template**
+
+When accessing the dataproc service, we can, among other options, check the Workflow tab the execution of workflows, workflow details and their details.
+
+![dataproc workflow temmplate 1](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/l8c09t53cv125vjx89gd.jpeg)
+
+By selecting the workflow created, it is possible to check the cluster used in processing 
+and the steps that make up the workflow, in addition to dependencies between the steps.
+
+![dataproc workflow temmplate 2](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/msalytbi3oc92ofwj9z0.jpeg)
+
+In the dataproc service, it is possible to check the execution of each job, execution status and other details, in the case of Workflow templates it is possible to check each execution, with details regarding the execution of steps in the workflow template, as shown in the image below
+
+![dataproc workflow temmplate 3](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/r1aps48bpuu9hpsztbtb.jpeg)
+
+### **Cloud Scheduler**
+
+By accessing the cloud schedule service, the service created by the deploy appears, in the image below,
+It is possible to include the status details of the last run, the schedule, which execution target or other details.
+
+![cloud scheduler](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/7k92sfeqnxwynlr200lj.jpeg)
+
+### **Cloud Storage**
+
+
+![cloud storage](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/uulc45ddeqy0ucggsclt.jpeg)
+
+alla
+![cloud storage files](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/wpm81m10u0gjt401dftw.jpeg)
+
+###Conclusion
+Data pipelines are essential elements in the world of data processing, although there are specialized and feature-rich tools such as Azure Data Factory and Apache Airflow, there are simpler options that are often interesting in certain scenarios, leaving it up to the data and architecture team to define the tool.
+most appropriate for the moment.
