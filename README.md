@@ -72,7 +72,7 @@ https://cloud.google.com/iam/docs/keys-create-delete
 For more details , access :
 https://docs.github.com/pt/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions
 
-## Deploying the project
+##Deploying the project
 Every time a push to the **main** branch happens, github actions will be triggered,
 running the yml script.
 the yml script contains 3 jobs which are explained in more detail below, but basically
@@ -460,37 +460,40 @@ In this job, a service account is created specifically for handling the schedule
 
 ### **Dataproc Workflow Template**
 
-When accessing the dataproc service, we can, among other options, check the Workflow tab the execution of workflows, workflow details and their details.
+After deploying the project, you can access the Dataproc service to view the Workflow template. In the Workflow tab, you can explore various options, including monitoring workflow executions and analyzing their details.
 
-![dataproc workflow temmplate 1](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/l8c09t53cv125vjx89gd.jpeg)
+![Dataproc Workflow Template 1](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/l8c09t53cv125vjx89gd.jpeg)
 
-By selecting the workflow created, it is possible to check the cluster used in processing 
-and the steps that make up the workflow, in addition to dependencies between the steps.
+When you select the created workflow, you can see the cluster used for processing and the steps that comprise the workflow, including any dependencies between the steps. This visibility allows you to track the workflow's operational flow.
 
-![dataproc workflow temmplate 2](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/msalytbi3oc92ofwj9z0.jpeg)
+![Dataproc Workflow Template 2](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/msalytbi3oc92ofwj9z0.jpeg)
 
-In the dataproc service, it is possible to check the execution of each job, execution status and other details, in the case of Workflow templates it is possible to check each execution, with details regarding the execution of steps in the workflow template, as shown in the image below
+Additionally, within the Dataproc service, you can monitor the execution status of each job. It provides details about each execution, including the performance of individual steps within the workflow template, as illustrated below.
 
-![dataproc workflow temmplate 3](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/r1aps48bpuu9hpsztbtb.jpeg)
+![Dataproc Workflow Template 3](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/r1aps48bpuu9hpsztbtb.jpeg)
 
 ### **Cloud Scheduler**
 
-By accessing the cloud schedule service, the service created by the deploy appears, in the image below,
-It is possible to include the status details of the last run, the schedule, which execution target or other details.
+By accessing the Cloud Scheduler service, you'll find the scheduled job created during the deployment process. The interface displays the last run status, the defined schedule for execution, and additional details about the target URL and other parameters.
 
-![cloud scheduler](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/7k92sfeqnxwynlr200lj.jpeg)
+![Cloud Scheduler](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/7k92sfeqnxwynlr200lj.jpeg)
 
 ### **Cloud Storage**
 
+As part of the deployment process, several Cloud Storage buckets are created: one bucket for storing data related to the data lake, another for the Dataproc cluster, and a third for the PySpark scripts and libraries used in the project. The Dataproc service itself creates a cluster to manage temporary data generated during processing.
 
-![cloud storage](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/uulc45ddeqy0ucggsclt.jpeg)
+![Cloud Storage](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/uulc45ddeqy0ucggsclt.jpeg)
 
-alla
-![cloud storage files](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/wpm81m10u0gjt401dftw.jpeg)
+After the data processing is complete, a new directory is established in the designated Cloud Storage bucket to save the ingested data from the data lake. The transient directory, created during the deployment phase, serves as the location where data was copied from the GitHub repository to Cloud Storage. In a production environment, another application would likely handle the ingestion of data into this transient layer.
 
-### Conclusion
-Data pipelines are essential elements in the world of data processing, although there are specialized and feature-rich tools such as Azure Data Factory and Apache Airflow, there are simpler options that are often interesting in certain scenarios, leaving it up to the data and architecture team to define the tool.
-most appropriate for the moment.
+![Cloud Storage Files](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/wpm81m10u0gjt401dftw.jpeg)
 
-### Links and References
+
+###Conclusion
+Data pipelines are crucial components in the landscape of data processing. While there are robust and feature-rich tools available, such as Azure Data Factory and Apache Airflow, simpler solutions can be valuable in certain scenarios. The decision on the most appropriate tool ultimately rests with the data and architecture teams, who must assess the specific needs and context to select the best solution for the moment.
+
+
+
+Links and References
+[Github Repo](https://github.com/jader-lima/gcp-dataproc-workflow)
 [Dataproc workflow documentation](https://cloud.google.com/dataproc/docs/concepts/workflows/workflow-schedule-solutions)
