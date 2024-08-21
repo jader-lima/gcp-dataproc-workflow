@@ -1,5 +1,4 @@
-# gcp-dataproc-workflow
-
+#gcp-dataproc-workflow
 ## Description of Services Used in GCP
 
 ## Apache Spark
@@ -72,7 +71,11 @@ https://cloud.google.com/iam/docs/keys-create-delete
 For more details , access :
 https://docs.github.com/pt/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions
 
-##Deploying the project
+## Architecture Diagram
+
+![Architecture Diagram](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/vfastxh43rr298iljs9j.png)
+
+## Deploying the project
 Every time a push to the **main** branch happens, github actions will be triggered,
 running the yml script.
 the yml script contains 3 jobs which are explained in more detail below, but basically
@@ -495,5 +498,4 @@ Data pipelines are crucial components in the landscape of data processing. While
 
 
 Links and References
-[Github Repo](https://github.com/jader-lima/gcp-dataproc-workflow)
 [Dataproc workflow documentation](https://cloud.google.com/dataproc/docs/concepts/workflows/workflow-schedule-solutions)
