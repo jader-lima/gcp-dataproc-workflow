@@ -72,6 +72,10 @@ https://cloud.google.com/iam/docs/keys-create-delete
 For more details , access :
 https://docs.github.com/pt/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions
 
+##Architecture Diagram
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/vfastxh43rr298iljs9j.png)
+
 ##Deploying the project
 Every time a push to the **main** branch happens, github actions will be triggered,
 running the yml script.
